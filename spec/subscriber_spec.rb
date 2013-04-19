@@ -85,7 +85,7 @@ describe RunAmqp::Subscriber do
       def basic_reject(delivery_tag, requeue)
       end
     end.new
-    mock(channel).basic_reject(metadata.delivery_tag, true)
+    mock(channel).basic_reject(metadata.delivery_tag, false)
 
     queue = Class.new do
       def initialize(metadata, properties, payload)

@@ -21,7 +21,8 @@ module RunAmqp
             @channel.basic_ack(metadata.delivery_tag, false)
           rescue Exception => e
             RunAmqp.logger.error "Error while executing job", e
-            @channel.basic_reject(metadata.delivery_tag, true)
+            # reject with requeue=false to route the message to the dead-letter-exchange
+            @channel.basic_reject(metadata.delivery_tag, false)
           end
         end
       end
