@@ -1,5 +1,8 @@
 module RunAmqp
   class Subscriber
+    include ActiveSupport::Callbacks
+    define_callbacks :wait_loop
+
     def initialize(channel, queues)
       @channel = channel
       @queues = queues
@@ -28,11 +31,13 @@ module RunAmqp
       end
 
       loop do
-        break if shutdown?
+        run_callbacks :wait_loop do
+          return if shutdown?
+        end
         sleep(5)
       end
     end # subscribe
-    
+
     def shutdown?
       @shutdown
     end

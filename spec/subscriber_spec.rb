@@ -111,4 +111,18 @@ describe RunAmqp::Subscriber do
 
     RunAmqp::Subscriber.new(channel, [queue]).subscribe
   end
+
+  it "should run the callbacks for wait_loop" do
+    subscriber_class = Class.new(RunAmqp::Subscriber) do
+      set_callback :wait_loop, :before, :callback_test
+      def callback_test
+      end
+    end
+    subscriber = subscriber_class.new(nil, [])
+    mock(subscriber).callback_test
+    any_instance_of subscriber_class do |klass|
+      mock(klass).shutdown? { true }
+    end
+    subscriber.subscribe
+  end
 end
