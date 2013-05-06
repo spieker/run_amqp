@@ -3,16 +3,24 @@ module RunAmqp
     include ActiveSupport::Callbacks
     define_callbacks :wait_loop
 
-    def initialize(channel, queues)
+    def initialize(channel)
       @channel = channel
-      @queues = queues
+      @queues = []
       @shutdown = nil
+    end
+
+    def add(queue, subscribe_options = {})
+      @queues << {
+        :queue => queue,
+        :subscribe_options => subscribe_options
+      }
+      self
     end
 
     def subscribe
       @queues.each do |queue|
         RunAmqp.logger.info "Subscribing", queue
-        queue.subscribe(:ack => true) do |metadata, properties, payload|
+        queue[:queue].subscribe(queue[:subscribe_options]) do |metadata, properties, payload|
           payload = ActiveSupport::JSON.decode(payload)
           begin
             RunAmqp.logger.info "Executing job", payload
@@ -21,11 +29,11 @@ module RunAmqp
               job.instance_variable_set "@#{key}".to_sym, value
             end
             job.work()
-            @channel.basic_ack(metadata.delivery_tag, false)
+            @channel.basic_ack(metadata.delivery_tag, false) if queue[:subscribe_options][:ack]
           rescue Exception => e
             RunAmqp.logger.error "Error while executing job", e
             # reject with requeue=false to route the message to the dead-letter-exchange
-            @channel.basic_reject(metadata.delivery_tag, false)
+            @channel.basic_reject(metadata.delivery_tag, false) if queue[:subscribe_options][:ack]
           end
         end
       end

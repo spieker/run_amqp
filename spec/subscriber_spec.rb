@@ -8,11 +8,11 @@ describe RunAmqp::Subscriber do
           block_given?.should == true
         end
       end.new
-      mock.proxy(queue).subscribe(:ack => true)
+      mock.proxy(queue).subscribe({})
       any_instance_of RunAmqp::Subscriber do |klass|
         mock(klass).shutdown? { true }
       end
-      RunAmqp::Subscriber.new(nil, [queue]).subscribe
+      RunAmqp::Subscriber.new(nil).add(queue).subscribe
     end
   end
 
@@ -61,7 +61,7 @@ describe RunAmqp::Subscriber do
       mock(klass).shutdown? { true }
     end
 
-    RunAmqp::Subscriber.new(channel, [queue]).subscribe
+    RunAmqp::Subscriber.new(channel).add(queue, :ack => true).subscribe
   end
   
   it "should reject and requeue failed messages" do
@@ -109,7 +109,7 @@ describe RunAmqp::Subscriber do
       mock(klass).shutdown? { true }
     end
 
-    RunAmqp::Subscriber.new(channel, [queue]).subscribe
+    RunAmqp::Subscriber.new(channel).add(queue, :ack => true).subscribe
   end
 
   it "should run the callbacks for wait_loop" do
@@ -118,7 +118,7 @@ describe RunAmqp::Subscriber do
       def callback_test
       end
     end
-    subscriber = subscriber_class.new(nil, [])
+    subscriber = subscriber_class.new(nil)
     mock(subscriber).callback_test
     any_instance_of subscriber_class do |klass|
       mock(klass).shutdown? { true }
